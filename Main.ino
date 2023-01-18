@@ -10,51 +10,106 @@
 #define closePosition 0
 #define openTime 1000
 
-char in;
-int targetHour;
-int targetMinute;
-Servo myservo; 
+String readString;
+bool reset_incoming = false;
+bool set_time_incoming = false;
+int move_distance = 1000;
 
 AccelStepper myStepper(FULLSTEP, in1 , in2 , in3 , in4 );
 
 void setup() {
   Serial.begin(9600);
+
+  //init stepper motor
   myStepper.setMaxSpeed(1000.0);
   myStepper.setAcceleration(100.0);
   myStepper.setSpeed(200);
-  myStepper.moveTo(1000);
-    myservo.attach(9);
-  Time.begin();
-}
 
+  myservo.attach(9);
+  Time.begin();
+
+}
 
 void loop() {
-	// Change direction once the motor reaches target position
-	if (myStepper.distanceToGo() == 0) 
-		myStepper.moveTo(-myStepper.currentPosition());
 
-	// Move the motor one step
-	myStepper.run();
+  while (Serial.available()) {
+    delay(10); 
+    char c = Serial.read(); 
+    if (c == ',') {
+      break;
+    }  
+    readString += c; 
+  } 
 
-    if (Serial.available() > 0) 
-        in = Serial.read();
+  if(reset_incoming == true){
+    //Serial.println(readString); //prints string to serial port out
 
-    if (in == 'a') {
-        Time.zone(+8);
-        setTime(12, 0, 0, 1, 1, 2020);  // Set the time to January 1, 2020 12:00:00 
-    }
+      int hour, min, sec, month, day, year;
+      char dot;
+      int pos = 0;
 
-    if ( in == 'b'){
-        targetHour = 12; // set the hour you want to open the door
-        targetMinute = 0; // set the minute you want to open the door
-    }
+    hour = readString.substring(pos, readString.indexOf('.')).toInt();
+    pos = readString.indexOf('.') + 1;
+    min = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+    pos = readString.indexOf('.', pos) + 1;
+    sec = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+    pos = readString.indexOf('.', pos) + 1;
+    month = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+    pos = readString.indexOf('.', pos) + 1;
+    day = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+    pos = readString.indexOf('.', pos) + 1;
+    year = readString.substring(pos).toInt();
+    
+    Time.zone(+8);
+    setTime(hour, min, sec, month, day, year); 
+    readString=""; //clears variable for new readString
+    reset_incoming = false;
+  }
 
-    Alarm.alarmRepeat(targetHour, targetMinute, 0, openDoor);
+  if(set_time_incoming == true){
+
+    int targetHour = 0;
+    int targetMinute = 0;
+    int targetSec = 0;
+    char dot;
+    int pos = 0;
+
+    year = readString.substring(pos, readString.indexOf('.')).toInt();
+    pos = readString.indexOf('.') + 1;
+    targetMinute = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+    pos = readString.indexOf('.', pos) + 1;
+    targetSec = readString.substring(pos, readString.indexOf('.', pos)).toInt();
+
+    Alarm.alarmRepeat(targetHour, targetMinute, targetSec, alarm_goes_off);
+
+    readString=""; //clears variable for new readString
+    set_time_incoming = false;
+    
+  }
+
+  if(readString == "reset_incoming" ){
+    readString="";
+    reset_incoming = true;
+  }
+  
+  if(readString == "set_time_incoming"){
+    readString="";
+    set_time_incoming = true;
+  }
 
 }
 
-void openDoor(){
-    myservo.write(openPosition);
-    delay(openTime);
-    myservo.write(closePosition);
+void alarm_goes_off(){
+
+  myStepper.moveTo(move_distance);
+
+  while(myStepper.distanceToGo() == 0)
+    myStepper.run();
+
+  myservo.write(openPosition);
+  delay(openTime);
+  myservo.write(closePosition);
+
+  move_distance += move_distance;
+
 }
