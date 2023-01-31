@@ -1,11 +1,7 @@
 #include <AccelStepper.h>
 #include <Servo.h> 
+#include <Time.h>
 
-#define FULLSTEP 4
-#define in1 8
-#define in2 8
-#define in3 8
-#define in4 8
 #define openPosition 90
 #define closePosition 0
 #define openTime 1000
@@ -14,17 +10,17 @@ String readString;
 bool reset_incoming = false;
 bool set_time_incoming = false;
 int move_distance = 1000;
+int EN = D1; // Enable pin for motor
+int IN1 = D2; // Input pin 1 for motor
+int IN2 = D3; /
 
-AccelStepper myStepper(FULLSTEP, in1 , in2 , in3 , in4 );
+Servo myservo;
 
 void setup() {
   Serial.begin(9600);
-
-  //init stepper motor
-  myStepper.setMaxSpeed(1000.0);
-  myStepper.setAcceleration(100.0);
-  myStepper.setSpeed(200);
-
+  pinMode(EN, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
   myservo.attach(9);
   Time.begin();
 
@@ -101,15 +97,15 @@ void loop() {
 
 void alarm_goes_off(){
 
-  myStepper.moveTo(move_distance);
-
-  while(myStepper.distanceToGo() == 0)
-    myStepper.run();
+  analogWrite(EN, 128);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  delay(7000);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
 
   myservo.write(openPosition);
   delay(openTime);
   myservo.write(closePosition);
-
-  move_distance += move_distance;
 
 }
