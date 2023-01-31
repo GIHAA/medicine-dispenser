@@ -29,13 +29,12 @@ void setup() {
   Serial.println("Connected to WiFi");
 
   // Connect to NTP server and set the time
-  configTime(-8, 0, "pool.ntp.org", "time.nist.gov");
+configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   while (!getLocalTime(&timeinfo)) {
     Serial.println("Waiting for NTP time sync...");
     delay(1000);
   }
   Serial.println(asctime(&timeinfo));
-
 
   // Set the alarm pin as an output
   pinMode(alarmPin, OUTPUT);
@@ -48,9 +47,7 @@ void loop() {
   // Get the current time
   now = time(nullptr);
   localtime_r(&now, &timeinfo);
-  Serial.println("HOUR : " timeinfo.tm_hour);
-  Serial.println("HOUR : " timeinfo.tm_min);
-  Serial.println("HOUR : " timeinfo.tm_sec);
+  Serial.println(asctime(&timeinfo));
 
   // Check if the current time matches the alarm time
   if (timeinfo.tm_hour == alarmHour && timeinfo.tm_min == alarmMinute && timeinfo.tm_sec == alarmSecond) {
@@ -64,6 +61,5 @@ void loop() {
     delay(1000);
     Serial.println("alaram Off");
   }
-
 
 }
