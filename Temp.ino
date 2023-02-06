@@ -1,3 +1,38 @@
+// String incomingString = "";
+// void setup() {
+//   Serial.begin(9600);
+  
+// }
+
+// void loop() {
+//   if (Serial.available()) {
+    
+//     while (Serial.available()) {
+//       char temp = (char)Serial.read();
+//       incomingString += temp;
+//     }
+//   }
+//   Serial.println("Received: " + incomingString);
+// }
+
+// void setup() {
+//   Serial.begin(9600); // start serial communication with a baud rate of 9600
+// }
+
+// void loop() {
+//   if (Serial.available() > 0) { // check if there is data available to read
+//     String incomingData = Serial.readString(); // read incoming data as a string
+//     Serial.println(incomingData); // print the incoming data to the serial monitor
+//      int colonIndex = incomingData.indexOf(":");
+//     String hourString = incomingData.substring(0, colonIndex);
+//     String minuteString = incomingData.substring(colonIndex + 1);
+//     int alarmHour = hourString.toInt();
+//     int alarmMinute = minuteString.toInt();
+//     Serial.println(alarmHour);
+//     Serial.println(alarmMinute);
+//   }
+// }
+
 
 #include <ESP8266WiFi.h> // Library for WiFi
 #include <time.h> // Library for time functions
@@ -42,41 +77,41 @@ void setup() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
+    //Serial.println("Connecting to WiFi...");
   }
+  //Serial.println("Connected to WiFi");
 
   // Connect to NTP server and set the time
 configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   while (!getLocalTime(&timeinfo)) {
+    //Serial.println("Waiting for NTP time sync...");
     delay(1000);
   }
-  myservo.write(20);
-  Serial.begin(9600);
+  //Serial.println(asctime(&timeinfo));
+  //Serial.flush();
+    Serial.begin(9600);
 
 }
 
 void loop() {
 
- if (Serial.available() > 0) { 
-    String incomingString = Serial.readString(); 
-    Serial.print(incomingString);
-    if (incomingString == "servo90") {
-      myservo.write(140);
-    }
-    else if (incomingString == "servo0"){
-      myservo.write(20);
-    }
+ if (Serial.available() > 0) { // check if there is data available to read
+    String incomingString = Serial.readString(); // read incoming data as a string
+    Serial.println(incomingString);
     int colonIndex = incomingString.indexOf(":");
     String hourString = incomingString.substring(0, colonIndex);
     String minuteString = incomingString.substring(colonIndex + 1);
     alarmHour = hourString.toInt();
     alarmMinute = minuteString.toInt();
-    //Serial.println(alarmHour);
-    //Serial.println(alarmMinute);
+    Serial.println(alarmHour);
+    Serial.println(alarmMinute);
   }
 
+  myservo.write(0);
   // Get the current time
   now = time(nullptr);
   localtime_r(&now, &timeinfo);
+  //Serial.println(asctime(&timeinfo));
 
   hour = timeinfo.tm_hour;
   minute = timeinfo.tm_min;
@@ -84,21 +119,16 @@ void loop() {
 
   add_offset(hour, minute, second, time_offset);
 
-  // Serial.print(hour);
-  // Serial.print(" :: ");
-  // Serial.print(minute);
-  // Serial.print(" :: ");
-  // Serial.print(second);
-  // Serial.print("\n\n\n");
-  // Serial.print("alarmHour : " );
-  // Serial.print(alarmHour); 
-  // Serial.print("alarmMinute : ");
-  // Serial.print(alarmMinute);
-  // Serial.print("\n\n\n");
+  Serial.print(hour);
+  Serial.print(" :: ");
+  Serial.print(minute);
+  Serial.print(" :: ");
+  Serial.print(second);
+  Serial.print("\n\n");
 
   // Check if the current time matches the alarm time
-  if (hour == alarmHour && minute == alarmMinute && second == 0) {
-    //Serial.println("alaram on");
+  if (hour == alarmHour && minute == alarmMinute ) {
+    Serial.println("alaram on");
     alarm_triggred();
   } else {
     digitalWrite(led, LOW); 
@@ -126,6 +156,13 @@ void alarm_triggred(){
 
   int timer = 0;
 
+      //debug
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      analogWrite(EN, 128);
+      delay(motor_offset);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, LOW);
 
   while (timer != 10){
 
@@ -134,8 +171,7 @@ void alarm_triggred(){
     digitalWrite(led, HIGH); 
 
     if (touchState == HIGH) {
-      digitalWrite(buzzer, LOW);
-      //Serial.print("sensor is pressed\n");
+      Serial.println("sensor is pressed");
       digitalWrite(IN1, HIGH);
       digitalWrite(IN2, LOW);
       analogWrite(EN, 128);
@@ -143,21 +179,21 @@ void alarm_triggred(){
       digitalWrite(IN1, LOW);
       digitalWrite(IN2, LOW);
 
-      myservo.write(100);
-      delay(6000);
-      myservo.write(20);
+      myservo.write(90);
+      delay(4000);
+      myservo.write(0);
+      digitalWrite(D1, LOW);
       digitalWrite(led, LOW); 
-      //Serial.flush();
       break;
     }
     else {
-      //Serial.print("Touch sensor is not pressed\n");
+      Serial.println("Touch sensor is not pressed");
     }
     delay(1000);
     timer += 1;
 
   }
-   digitalWrite(buzzer, LOW); 
+   digitalWrite(D1, LOW);
    digitalWrite(led, LOW); 
-    Serial.flush();
+  //logic
 }
